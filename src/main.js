@@ -5,7 +5,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'dat.gui';
 import { Goasa } from "./physic";
 import { Vector } from "./Vector";
-
+import { SubmarineModel } from './model/submarine_model.js';
+import { SkyBoxModel } from "./model/sky_box_model.js";
 const canvas = document.getElementById("scene");
 
 const cubeTextureLoader = new THREE.CubeTextureLoader();
@@ -70,15 +71,8 @@ directionalLight.position.set(100, 100, 10);
 scene.add(ambientLight, directionalLight);
 
 /* SKYBOX*/
-const cubeMaterial = new THREE.MeshBasicMaterial({
-    color: 0x001123,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.7
-});
-
-const cubeGeometry = new THREE.BoxGeometry(20000, 20000, 20000);
-const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+const skyBox = new SkyBoxModel(0x001123, THREE.DoubleSide, true, 0.7,2000);
+const cube = new THREE.Mesh(skyBox.getCubeGeometry(), skyBox.getSkyBox());
 cube.position.y = -10060;
 scene.add(cube);
 
@@ -100,17 +94,9 @@ plain.position.set(0, -50, 0);
 scene.add(plain);
 
 /* SUBMARINE */
-const goasa = new Goasa(new Vector(plain.position.x, plain.position.y, plain.position.z - 100));
-const group = new THREE.Group();
-group.position.set(plain.position.x, plain.position.y, plain.position.z - 100);
-
-// Load the GLTF model
-const loader = new GLTFLoader();
-loader.load('models/scene.gltf', (gltf) => {
-    gltf.scene.scale.set(0.1, 0.1, 0.1);
-    group.add(gltf.scene); // Add the loaded model to the scene
-});
-scene.add(group);
+const plainPosition = { x:plain.position.x, y: plain.position.y, z:plain.position.z - 100 };
+const submarine = new SubmarineModel('models/scene.gltf',plainPosition);
+scene.add(submarine.getSubmarine());
 
 /* FOG */
 const fogColor = new THREE.Color(0x001123); // Deep water color
@@ -147,20 +133,34 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('keyup', (event) => {
     keys[event.code] = false;
 });
+const moveSubmarine=()=>{
+    if (keys['KeyA']) {
+        submarine.position.x -= 1;
+    }
+    if (keys['KeyD']) {
+        submarine.position.x += 1;
+    }
+    if (keys['KeyW']) {
+        submarine.position.z -= 1;
+    }
+    if (keys['KeyS']) {
+        submarine.position.z += 1;
+    }
+}
 
 const moveCamera = () => {
     const speed = 2;
 
-    if (keys['ArrowUp'] || keys['KeyW']) {
+    if (keys['ArrowUp'] ) {
         camera.position.z -= speed;
     }
-    if (keys['ArrowDown'] || keys['KeyS']) {
+    if (keys['ArrowDown'] ) {
         camera.position.z += speed;
     }
-    if (keys['ArrowLeft'] || keys['KeyA']) {
+    if (keys['ArrowLeft'] ) {
         camera.position.x -= speed;
     }
-    if (keys['ArrowRight'] || keys['KeyD']) {
+    if (keys['ArrowRight']) {
         camera.position.x += speed;
     }
 
@@ -182,6 +182,7 @@ export const main = () => {
     time += 0.4;
     window.requestAnimationFrame(main);
     moveCamera();
+    moveSubmarine();
     render();
 
     /* phyiscs laws  */
