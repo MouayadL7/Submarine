@@ -1,16 +1,14 @@
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { GUI } from 'dat.gui';
-import { Goasa } from "./physic";
-import { Vector } from "./Vector";
 import { SubmarineModel } from './model/submarine_model.js';
 import { SkyBoxModel } from "./model/sky_box_model.js";
+import { PlainModel } from './model/plain_model.js'; 
+import { KeysController } from "./controller/keys_controller.js";
+
 const canvas = document.getElementById("scene");
-
 const cubeTextureLoader = new THREE.CubeTextureLoader();
-
 const scene = new THREE.Scene();
 
 const gui = new GUI();
@@ -49,7 +47,6 @@ const enviromantMap = cubeTextureLoader.load([
 ]);
 
 scene.background = enviromantMap;
-
 const camera = new THREE.PerspectiveCamera(
     45,
     canvas.width / canvas.height,
@@ -79,22 +76,13 @@ scene.add(cube);
 /* PLAIN-WAVES */
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load("/assets/textures/blue_ocean.jpg");
-
-const plainMaterial = new THREE.MeshBasicMaterial({
-    color: 0x04d7e1,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.7,
-    map: texture
+const plain = new PlainModel({color: 0x04d7e1,side: THREE.DoubleSide,transparent: true,opacity: 0.7,texture: texture,
+    width: 20000,height: 20000,widthSegments: 500,heightSegments: 500,rotationX: Math.PI / 2,position: { x: 0, y: -50, z: 0 }
 });
-const plainGeometry = new THREE.PlaneGeometry(20000, 20000, 500, 500);
-const plain = new THREE.Mesh(plainGeometry, plainMaterial);
-plain.rotation.x = Math.PI / 2;
-plain.position.set(0, -50, 0);
-scene.add(plain);
+scene.add(plain.getPlain());
 
 /* SUBMARINE */
-const plainPosition = { x:plain.position.x, y: plain.position.y, z:plain.position.z - 100 };
+const plainPosition = { x:plain.pl.position.x, y: plain.pl.position.y, z:plain.pl.position.z - 100 };
 const submarine = new SubmarineModel('models/scene.gltf',plainPosition);
 scene.add(submarine.getSubmarine());
 
@@ -116,7 +104,6 @@ const handleWindowResize = () => {
 const init = () => {
     camera.position.set(0, 0, 1);
     controls.update();
-
     window.addEventListener("resize", handleWindowResize);
     window.addEventListener("load", handleWindowResize);
 };
@@ -125,68 +112,22 @@ const render = () => {
     controls.update();
     renderer.render(scene, camera);
 };
-
-const keys = {};
-window.addEventListener('keydown', (event) => {
-    keys[event.code] = true;
-});
-window.addEventListener('keyup', (event) => {
-    keys[event.code] = false;
-});
-const moveSubmarine=()=>{
-    if (keys['KeyA']) {
-        submarine.position.x -= 1;
-    }
-    if (keys['KeyD']) {
-        submarine.position.x += 1;
-    }
-    if (keys['KeyW']) {
-        submarine.position.z -= 1;
-    }
-    if (keys['KeyS']) {
-        submarine.position.z += 1;
-    }
-}
-
-const moveCamera = () => {
-    const speed = 2;
-
-    if (keys['ArrowUp'] ) {
-        camera.position.z -= speed;
-    }
-    if (keys['ArrowDown'] ) {
-        camera.position.z += speed;
-    }
-    if (keys['ArrowLeft'] ) {
-        camera.position.x -= speed;
-    }
-    if (keys['ArrowRight']) {
-        camera.position.x += speed;
-    }
-
-    // Update camera based on mouse movement
-    controls.update();
-};
-
+//camera
+const key = new KeysController(camera,controls,2);
 var time = 0;
 init();
 
 export const main = () => {
-    var vertices = plainGeometry.attributes.position.array;
+    var vertices = plain.geometry.attributes.position.array;
     for (var i = 0; i < vertices.length; i += 3) {
         var x = vertices[i];
         var y = vertices[i + 1];
         vertices[i + 2] = Math.sin((x + y + time) * 0.2) * 8;
     }
-    plainGeometry.attributes.position.needsUpdate = true;
+    plain.geometry.attributes.position.needsUpdate = true;
     time += 0.4;
     window.requestAnimationFrame(main);
-    moveCamera();
-    moveSubmarine();
+    key.moveCamera();
     render();
-
-    /* phyiscs laws  */
-    // goasa.move();
-    // group.position.set(goasa.position.x, goasa.position.y, goasa.position.z )
 };
 main();
