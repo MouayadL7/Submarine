@@ -17,11 +17,11 @@ export class Submarine{
         angleVerticalPlane                          = null,
         height                                      = 10,
         radius                                      = 2,
-        netMass                                     = 10000,
-        tanksCapacity                               = 1000,
+        netMass                                     = 1000,
+        tanksCapacity                               = 1000000,
         volumeOfWaterInTanks                        = 0,
         enginePower                                 = 1000,
-        maxSpeedOfFan                               = 60,
+        maxSpeedOfFan                               = 10000,
         speedOfFan                                  = 0,
         areaOfBackPlane                             = 2,
         areaOfFrontPlane                            = 2,
@@ -109,7 +109,9 @@ export class Submarine{
         
         const ax = (F_engine.x - F_drag_on_body.x - F_resistance.x) / (this.netMass + this.volumeOfWaterInTanks)
         const ay = (F_buoyancy - W - F_drag_on_body.y - F_resistance.y) / (this.netMass + this.volumeOfWaterInTanks)
-        const az = (F_drag_on_body.z - F_resistance.z) / (this.netMass + this.volumeOfWaterInTanks)
+        const az = (-F_drag_on_body.z - F_resistance.z) / (this.netMass + this.volumeOfWaterInTanks)
+
+        const res = this.getRotatedForce(new THREE.Vector3(ax , ay , az) , -1)
         console.log("Acceleration" , {
             "net mass": this.netMass,
             'volume of water in tanks': this.volumeOfWaterInTanks,
@@ -120,27 +122,28 @@ export class Submarine{
             "F_resistance":F_resistance,
             'Weight Force': W , 
             'F_buoyancy': F_buoyancy,
+            'acceleration': new THREE.Vector3(ax , ay , az),
+            'rotated_acceleration': res
         })
-        this.acceleration.set(ax , ay , az)
+        this.acceleration.set(res.x , res.y , res.z)
     }
     calcNextVelocity = (deltaTime) => {
         console.log("Next Velocity" , {
             "Delta Time": deltaTime
         })
-        /* const vx = this.velocity.x + this.acceleration.x * deltaTime
+        const vx = this.velocity.x + this.acceleration.x * deltaTime
         const vy = this.velocity.y + this.acceleration.y * deltaTime
         const vz = this.velocity.z + this.acceleration.z * deltaTime
         this.velocity.set(vx , vy , vz)
-         */
-        this.velocity.add(this.acceleration.clone().multiplyScalar(deltaTime))
+        
         // return this.velocity
     }
     calcNextLocation = (deltaTime) => {
-        // const x = this.position.x + this.velocity.x * deltaTime;
-        // const y = this.position.y + this.velocity.y * deltaTime;
-        // const z = this.position.z + this.velocity.z * deltaTime;
-        // this.position.set(x , y , z)
-        this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+        const x = this.position.x + this.velocity.x * deltaTime
+        let y = this.position.y + this.velocity.y * deltaTime
+        const z = this.position.z + this.velocity.z * deltaTime
+        y = Math.min(0 , y)
+        this.position.set(x , y , z)
     }
     LinearMotionInMoment = (deltaTime) => {
         this.calcLinearAcceleration()
@@ -157,9 +160,10 @@ export class Submarine{
         const Moment_z = this.distanceHorizontalBackPlanesFromTheCenter * ResistanceForce_H * Math.sin(this.phi_z)
         const Moment_y = this.distanceVerticalPlanesFromTheCenter * ResistanceForce_V * Math.sin(this.phi_y)
 
-        this.angularAcceleration = new THREE.Vector3(0 , Moment_y / InertiaForce[1][1] , Moment_z / InertiaForce[2][2])
+        let res = new THREE.Vector3(0 , Moment_y / InertiaForce[1][1] , Moment_z / InertiaForce[2][2])
+        res = this.getRotatedForce(res , -1)
 
-        // return this.angularAcceleration
+        this.angularAcceleration.set(res.x , res.y , res.z)
         // return Moment_z / InertiaForce[2][2]
     }
     calcAngularVelocity = (deltaTime) => {
@@ -185,6 +189,24 @@ export class Submarine{
         this.calcNextAngel(deltaTime)
     }
 
+    getRotatedForce = (force , sign = 1) =>{
+       return this.getRotatedForce_Y(this.getRotatedForce_Z(force , sign) , sign)
+    }
+    getRotatedForce_Z = (force , sign) =>{
+        let res = new THREE.Vector3()
+        res.x = force.x * Math.cos (sign * this.phi_z) + force.y * -Math.sin(sign * this.phi_z)
+        res.y = force.y * -Math.sin(sign * this.phi_z) + force.y *  Math.cos(sign * this.phi_z)
+        res.z = force.z 
+        return res 
+    }
+
+    getRotatedForce_Y = (force , sign) =>{
+        let res = new THREE.Vector3()
+        res.x = force.x * Math.cos(sign * this.phi_y) - force.z * Math.sin(sign * this.phi_y)
+        res.z = force.x * Math.sin(sign * this.phi_y) + force.z * Math.cos(sign * this.phi_y)
+        res.y = force.y 
+        return res 
+    }
 
     
 }

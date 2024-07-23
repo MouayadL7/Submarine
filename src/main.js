@@ -58,7 +58,7 @@ envDebugFolder
 
 submarineDebugFolder.add(Submarine_Physics , 'height' , 0.5 , 10 , 0.1)
 submarineDebugFolder.add(Submarine_Physics , 'radius' , 0.2 , 10 , 0.01)
-submarineDebugFolder.add(Submarine_Physics , 'tanksCapacity' , 100 , 10000 , 1)
+submarineDebugFolder.add(Submarine_Physics , 'tanksCapacity' , 10000 , 1000000 , 1)
         .name('Tanks Capacity')
 submarineDebugFolder.add(Submarine_Physics , 'netMass' , 500 , 10000 , 1)
         .name('Net Mass')
@@ -105,6 +105,9 @@ const renderer = new THREE.WebGLRenderer({
     canvas,
 });
 
+const V = new THREE.Vector3(1 , 2 , 3);
+
+console.log(V[0])
 
 
 // Controls:
@@ -170,35 +173,37 @@ const init = () => {
 };
 let previous_time = Date.now() 
 
+camera.lookAt(submarine.group.position)
 console.log(submarine)
 // to handle A, D, UP and DOWN keys:
 window.addEventListener('keydown' , (event) =>{
         
     const key = event.key
     console.log(key)
+    let fact = 0.1
     if(key == 'ArrowUp')
     {
-        Submarine_Physics.phi_z += 0.1
+        Submarine_Physics.phi_z += 0.1 * fact 
     }
     if(key == 'ArrowDown')
     {
-        Submarine_Physics.phi_z -= 0.1
+        Submarine_Physics.phi_z -= 0.1 * fact 
     }
     if(key == 'ArrowRight')
     {
-        Submarine_Physics.phi_y += 0.1 
+        Submarine_Physics.phi_y += 0.1 * fact 
     }
     if(key == 'ArrowLeft')
     {
-        Submarine_Physics.phi_y -= 0.1 
+        Submarine_Physics.phi_y -= 0.1 * fact
     }
     if(key == 'A' || key == 'a')
     {
-        Submarine_Physics.volumeOfWaterInTanks = Math.min(Submarine_Physics.tanksCapacity , Submarine_Physics.volumeOfWaterInTanks + 10)
+        Submarine_Physics.volumeOfWaterInTanks = Math.min(Submarine_Physics.tanksCapacity , Submarine_Physics.volumeOfWaterInTanks + 100000)
     }
     if(key == 'D' || key == 'd')
     {
-        Submarine_Physics.volumeOfWaterInTanks = Math.max(0, Submarine_Physics.volumeOfWaterInTanks - 10)
+        Submarine_Physics.volumeOfWaterInTanks = Math.max(0, Submarine_Physics.volumeOfWaterInTanks - 100000)
     }
 
     if(key == 'W' || key == 'w')
@@ -209,19 +214,19 @@ window.addEventListener('keydown' , (event) =>{
     {
         Submarine_Physics.speedOfFan = Math.max(-Submarine_Physics.maxSpeedOfFan , Submarine_Physics.speedOfFan - 10)
     }
-        const current_time = Date.now()
-        let deltaTime = (current_time - previous_time) / 1000
-        previous_time = current_time 
-        console.log(deltaTime)
-        deltaTime = 0.01
-        Submarine_Physics.LinearMotionInMoment(deltaTime)
-        Submarine_Physics.AngularMotionInMoment(deltaTime)
-        submarine.group.position.copy(Submarine_Physics.position)
-        submarine.group.rotation.copy(Submarine_Physics.rotation)
+        // const current_time = Date.now()
+        // let deltaTime = (current_time - previous_time) / 1000
+        // previous_time = current_time 
+        // console.log(deltaTime)
+        // deltaTime = 0.01
+        // Submarine_Physics.LinearMotionInMoment(deltaTime)
+        // Submarine_Physics.AngularMotionInMoment(deltaTime)
+        // submarine.group.position.copy(Submarine_Physics.position)
+        // submarine.group.rotation.copy(Submarine_Physics.rotation)
 
-        console.log("Camera:" , camera)
-        console.log("Submarine_Model" , submarine)        
-        Submarine_Physics.getSubmarineInfo()
+        // console.log("Camera:" , camera)
+        // console.log("Submarine_Model" , submarine)        
+        // Submarine_Physics.getSubmarineInfo()
 })
 const render = () => {
     // controls.update();
@@ -323,23 +328,16 @@ export const main = () => {
     plain.geometry.attributes.position.needsUpdate = true;
     time += 0.4;
 
-    // const current_time = Date.now()
-    // const deltaTime = (current_time - previous_time)/1000 
-    // previous_time = current_time 
+    const current_time = Date.now()
+    const deltaTime = (current_time - previous_time)/1000 
+    previous_time = current_time 
     
-    // Submarine_Physics.LinearMotionInMoment(deltaTime)
-    // Submarine_Physics.AngularMotionInMoment(deltaTime)
+    Submarine_Physics.LinearMotionInMoment(deltaTime)
+    Submarine_Physics.AngularMotionInMoment(deltaTime)
     
-    // console.log(submarine.group.position)
-    // submarine.group.position.copy(Submarine_Physics.position)
-    // submarine.group.rotation.copy(Submarine_Physics.rotation)
-    // submarine.group.position.z -= 1
-    // camera.position.x = submarine.group.position.x;
-    // camera.position.y = submarine.group.position.y + 57; // Adjust this value to control the vertical offset
-    // camera.position.z = submarine.group.position.z + 208; // Adjust this value to control the distance behind the submarine
-    // camera.lookAt(submarine.group.position)
-    // camera.rotation.copy(submarine.group.rotation)
-    // camera.lookAt(submarine.group.position)
+    Submarine_Physics.getSubmarineInfo()
+    submarine.group.position.copy(Submarine_Physics.position)
+    submarine.group.rotation.copy(Submarine_Physics.rotation)
     
     const axesHelper = new THREE.AxesHelper(100)
     scene.add(axesHelper)
