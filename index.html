@@ -4,11 +4,42 @@
 		<meta charset="utf-8">
 		<title>My first three.js app</title>
 		<style>
-			body { margin: 0; }
-		</style>
+			* {
+			  margin: 0;
+			  padding: 0;
+			}
+			.infoDev {
+			  background-color: #080b2c;
+			  padding: 5px;
+			  position: absolute;
+			  top: 10%;
+			  left: 20;
+			}
+		
+			.infoText {
+			  font-family: 'Roboto', sans-serif;
+			  color: #08f1f3;
+			}
+		
+			canvas {
+			  width: 100vw;
+			  height: 100vh;
+			}
+		
+			hr {
+			  border: none;
+			  height: 2px;
+			  background-color: #08f1f3;
+			  margin: 3px 0;
+			  width: 5;
+			}
+		  </style>
 	</head>
 	<body>
 		<canvas id="scene"></canvas>
+		<div id="container">
+			<!-- <div id="info">Description</div> -->
+		</div>
 		<script type="module" src="/src/main.js"></script>
 	</body>
 </html>

@@ -2,7 +2,7 @@ import "./style.css";
 import { Environment } from './physics/environment.js'
 import  { Submarine } from './submarine.js'
 import * as THREE from "three";
-
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GUI } from 'dat.gui';
@@ -31,6 +31,7 @@ const submarineDebugFolder = gui.addFolder('submarine')
 const Submarine_Physics = new Submarine()
 Submarine_Physics.position.set(0 , 0 , 0)
 Submarine_Physics.getSubmarineInfo()
+// return ;
 envDebugFolder
         .add(Environment , 'DENSITY_OF_LIQUID' , 1000 , 1050)
         .name('DensityOfWater')
@@ -105,9 +106,54 @@ const renderer = new THREE.WebGLRenderer({
     canvas,
 });
 
-const V = new THREE.Vector3(1 , 2 , 3);
+var stats= new Stats()
 
-console.log(V[0])
+const container = document.getElementById("container");
+container.appendChild(renderer.domElement);
+container.appendChild(stats.dom);
+const infoDev = document.createElement('div')
+infoDev.className = 'infoDev'
+
+const info = {
+    "Engine_Force" : null,
+    "Position_x": null,
+    "Position_y": null,
+    "Position_z": null,
+    
+    "Rotation_x": null,
+    "Rotation_y": null,
+    "Rotation_z": null,
+
+
+    "Angular_X": null,
+    "Angular_Y": null,
+    "Angular_Z": null,
+    
+    "Speed_Of_Fans": null,
+    "Volume_Of_Water": 0,
+    "Phi_x": 0,
+    "Phi_y": 0,
+    "Phi_z": 0,
+    
+    'Speed_on_x': 0,
+    'Speed_on_y': 0,
+    'Speed_on_z': 0,
+
+    'Acceleration_x':0,
+    'Acceleration_y':0,
+    'Acceleration_z':0,
+}
+
+Object.keys(info).forEach(function (element) {
+    info[element] = document.createElement('h6');
+    info[element].className = 'infoText'
+
+
+    infoDev.appendChild(info[element]);
+    const div = document.createElement('hr')
+    infoDev.appendChild(div)
+});
+container.appendChild(infoDev)
 
 
 // Controls:
@@ -140,9 +186,7 @@ scene.add(plain.getPlain());
 /* SUBMARINE */
 const plainPosition = { x:plain.pl.position.x, y: plain.pl.position.y, z:plain.pl.position.z};
 const submarine = new SubmarineModel('models/scene.gltf',plainPosition);
-submarine.group.rotateY(-1.58
-
-)
+submarine.group.rotateY(Math.PI)
 scene.add(submarine.getSubmarine());
 
 /* FOG */
@@ -164,7 +208,7 @@ const handleWindowResize = () => {
     
 
 const init = () => {
-    camera.position.set(-201.51811617178316 , 60.33951210137103 , 0.11209360401012702);
+    camera.position.set(-201.62052466212333 , 59.996158817663 , -0.21305663026041985);
     camera.lookAt(submarine.group.position)
 
     // controls.update();
@@ -175,35 +219,74 @@ let previous_time = Date.now()
 
 camera.lookAt(submarine.group.position)
 console.log(submarine)
+
+
+
+
+
+Submarine_Physics.rotation.y = Math.PI
+
+submarine.group.rotation.set(0 , - Math.PI / 2 , 0)
+
+// console.log("Submarine rotation" , submarine.group.rotation)
+// Submarine_Physics.rotation.copy(submarine.group.rotation)
+
 // to handle A, D, UP and DOWN keys:
+let current_rotation = 0
 window.addEventListener('keydown' , (event) =>{
         
     const key = event.key
     console.log(key)
-    let fact = 0.1
+    let fact = 1
+    const max_rotation_speed = 180
+    const max_rotation = Math.PI / 24 
+
     if(key == 'ArrowUp')
     {
-        Submarine_Physics.phi_z += 0.1 * fact 
+        Submarine_Physics.angleHorizontalBackPlane  += 0.1
+        // Submarine_Physics.angleHorizontalFrontPlane += 0.1
+
+        // Submarine_Physics.rotation.z += 0.1 
+        // Submarine_Physics.rotation.z  = Math.min(Submarine_Physics.rotation.z, fact)
+        // // Submarine_Physics.position.y = Math.min(Submarine_Physics.position.y, 26);
+        // info["rotation_z"].textContent = 'rotation_z : ' + Submarine_Physics.rotation.z.toFixed(0)
+
     }
     if(key == 'ArrowDown')
     {
-        Submarine_Physics.phi_z -= 0.1 * fact 
+        Submarine_Physics.angleHorizontalBackPlane  -= 0.1
+        // Submarine_Physics.angleHorizontalFrontPlane -= 0.1
+        // info["rotation_z"].textContent = 'rotation_z : ' + Submarine_Physics.rotation.z.toFixed(0)
     }
     if(key == 'ArrowRight')
     {
-        Submarine_Physics.phi_y += 0.1 * fact 
+        // if(current_rotation < max_rotation)
+        //     current_rotation += 20
+
+        // submarine.group.rotation.z = (current_rotation / max_rotation_speed) * max_rotation
+        Submarine_Physics.angleVerticalPlane += 0.1
+        // info["rotation.y"].textContent = 'rotation_y : ' + Submarine_Physics.rotation.y.toFixed(0)
+
     }
     if(key == 'ArrowLeft')
     {
-        Submarine_Physics.phi_y -= 0.1 * fact
+        Submarine_Physics.angleVerticalPlane -= 0.1
+        // if(current_rotation  > -max_rotation) 
+        //     current_rotation -= 20
+        // submarine.group.rotation.z = (current_rotation / max_rotation_speed) * max_rotation
+
+        // info["rotation.y"].textContent = 'rotation_y : ' + Submarine_Physics.rotation.y.toFixed(0)
     }
     if(key == 'A' || key == 'a')
     {
         Submarine_Physics.volumeOfWaterInTanks = Math.min(Submarine_Physics.tanksCapacity , Submarine_Physics.volumeOfWaterInTanks + 100000)
+        info["Volume_Of_Water"].textContent = 'Volume_Of_Water : ' + Submarine_Physics.volumeOfWaterInTanks.toFixed(0)
     }
     if(key == 'D' || key == 'd')
     {
-        Submarine_Physics.volumeOfWaterInTanks = Math.max(0, Submarine_Physics.volumeOfWaterInTanks - 100000)
+        Submarine_Physics.volumeOfWaterInTanks = Math.max(0, Submarine_Physics.volumeOfWaterInTanks - 100000/2)
+        info["Volume_Of_Water"].textContent = 'Volume_Of_Water : ' + Submarine_Physics.volumeOfWaterInTanks.toFixed(0)
+
     }
 
     if(key == 'W' || key == 'w')
@@ -214,19 +297,19 @@ window.addEventListener('keydown' , (event) =>{
     {
         Submarine_Physics.speedOfFan = Math.max(-Submarine_Physics.maxSpeedOfFan , Submarine_Physics.speedOfFan - 10)
     }
-        // const current_time = Date.now()
-        // let deltaTime = (current_time - previous_time) / 1000
-        // previous_time = current_time 
-        // console.log(deltaTime)
-        // deltaTime = 0.01
-        // Submarine_Physics.LinearMotionInMoment(deltaTime)
-        // Submarine_Physics.AngularMotionInMoment(deltaTime)
-        // submarine.group.position.copy(Submarine_Physics.position)
-        // submarine.group.rotation.copy(Submarine_Physics.rotation)
+        const current_time = Date.now()
+        let deltaTime = (current_time - previous_time) / 1000
+        previous_time = current_time 
+        console.log(deltaTime)
+        deltaTime = 0.01
+        Submarine_Physics.LinearMotionInMoment(deltaTime , info)
+        Submarine_Physics.AngularMotionInMoment(deltaTime , info , submarine)
+        submarine.group.position.copy(Submarine_Physics.position)
+        submarine.group.rotation.copy(Submarine_Physics.rotation)
 
-        // console.log("Camera:" , camera)
-        // console.log("Submarine_Model" , submarine)        
-        // Submarine_Physics.getSubmarineInfo()
+        console.log("Camera:" , camera)
+        console.log("Submarine_Model" , submarine)        
+        Submarine_Physics. getSubmarineInfo()
 })
 const render = () => {
     // controls.update();
@@ -237,43 +320,6 @@ const render = () => {
 // camera.lookAt(submarine.group.position)
 var time = 0;
 init();
-
-gui.add(submarine.group.position , 'x' , -300 , 300)
-    .name('submarine_x')
-    .onChange( () => {
-        console.log("Camera AND submarine positions: " , {
-            "camera position": camera.position,
-            "camera rotation": camera.rotation,
-        
-            "submarine position": submarine.group.position,
-            "submarine rotation": submarine.group.rotation
-        })
-    })
-    gui.add(submarine.group.position , 'y' , -300 , 300)
-    .name('submarine_y')
-    .onChange( () => {
-        console.log("Camera AND submarine positions: " , {
-            "camera position": camera.position,
-            "camera rotation": camera.rotation,
-        
-            "submarine position": submarine.group.position,
-            "submarine rotation": submarine.group.rotation
-        })
-    })
-gui.add(submarine.group.position , 'z' , -300 , 300)
-    .name('submarine_Z')
-    .onChange( () => {
-        console.log("Camera AND submarine positions: " , {
-            "camera position": camera.position,
-            "camera rotation": camera.rotation,
-        
-            "submarine position": submarine.group.position,
-            "submarine rotation": submarine.group.rotation
-        })
-})
-    // camera.lookAt(submarine.group.position)
-gui.add(camera.position , 'z' , -300 , 300)
-    .name('Camera_z')
 
 
 gui.add(submarine.group.rotation , 'x' , -10 , 10 , 0.01)
@@ -287,7 +333,7 @@ gui.add(submarine.group.rotation , 'x' , -10 , 10 , 0.01)
             "submarine rotation": submarine.group.rotation
         })
     })
-    gui.add(submarine.group.rotation , 'y' , -10 , 10 , 0.01)
+gui.add(submarine.group.rotation , 'y' , -10 , 10 , 0.01)
     .name('submarine_rotation_y')
     .onChange( () => {
         console.log("Camera AND submarine positions: " , {
@@ -298,7 +344,7 @@ gui.add(submarine.group.rotation , 'x' , -10 , 10 , 0.01)
             "submarine rotation": submarine.group.rotation
         })
     })
-gui.add(submarine.group.position , 'z' , -10 , 10 , 0.01)
+gui.add(submarine.group.rotation , 'z' , -10 , 10 , 0.01)
     .name('submarine_rotation_z')
     .onChange( () => {
         console.log("Camera AND submarine positions: " , {
@@ -310,14 +356,38 @@ gui.add(submarine.group.position , 'z' , -10 , 10 , 0.01)
         })
 })
     // camera.lookAt(submarine.group.position)
-gui.add(camera.position , 'z' , -300 , 300)
-    .name('Camera_z')
     
+gui.add(Submarine_Physics , 'phi_x' , -10 , 10 , 0.1)
+    .onChange( () => {
+        Submarine_Physics.LinearMotionInMoment(0.1) 
+        // Submarine_Physics.AngularMotionInMoment(0.1)
+        submarine.group.position.copy(Submarine_Physics.position)
+        // submarine.group.rotation.copy(Submarine_Physics.rotation)
+        Submarine_Physics.getSubmarineInfo()
 
+        }
+    )
+gui.add(Submarine_Physics , 'phi_y' , -10 , 10 , 0.1)
+    .onChange( () => {
+    Submarine_Physics.LinearMotionInMoment(0.1) 
+    // Submarine_Physics.AngularMotionInMoment(0.1)
+    submarine.group.position.copy(Submarine_Physics.position)
+    // submarine.group.rotation.copy(Submarine_Physics.rotation)
+    Submarine_Physics.getSubmarineInfo()
 
-// let previous_time = 0 
-console.log( "Submarine" , submarine)
-console.log("Camera" , camera)
+    }
+)
+gui.add(Submarine_Physics , 'phi_z' , -10 , 10 , 0.1)
+    .onChange( () => {
+    Submarine_Physics.LinearMotionInMoment(0.1) 
+    // Submarine_Physics.AngularMotionInMoment(0.1)
+    submarine.group.position.copy(Submarine_Physics.position)
+    // submarine.group.rotation.copy(Submarine_Physics.rotation)
+    Submarine_Physics.getSubmarineInfo()
+
+    }
+)
+
 export const main = () => {
     var vertices = plain.geometry.attributes.position.array;
     for (var i = 0; i < vertices.length; i += 3) {
@@ -328,16 +398,16 @@ export const main = () => {
     plain.geometry.attributes.position.needsUpdate = true;
     time += 0.4;
 
-    const current_time = Date.now()
-    const deltaTime = (current_time - previous_time)/1000 
-    previous_time = current_time 
+    // const current_time = Date.now()
+    // const deltaTime = (current_time - previous_time)/1000 
+    // previous_time = current_time 
     
-    Submarine_Physics.LinearMotionInMoment(deltaTime)
-    Submarine_Physics.AngularMotionInMoment(deltaTime)
+    // Submarine_Physics.LinearMotionInMoment(deltaTime , info)
+    // Submarine_Physics.AngularMotionInMoment(deltaTime , info , submarine)
     
-    Submarine_Physics.getSubmarineInfo()
-    submarine.group.position.copy(Submarine_Physics.position)
-    submarine.group.rotation.copy(Submarine_Physics.rotation)
+    // Submarine_Physics.getSubmarineInfo()
+    // submarine.group.position.copy(Submarine_Physics.position)
+    // submarine.group.rotation.copy(Submarine_Physics.rotation)
     
     const axesHelper = new THREE.AxesHelper(100)
     scene.add(axesHelper)
@@ -346,6 +416,8 @@ export const main = () => {
     window.requestAnimationFrame(main);
     // key.moveCamera();
     render();
+    stats.update()
+
 };
 main();
 

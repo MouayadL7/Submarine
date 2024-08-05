@@ -22,18 +22,18 @@ export class KeysController{
     }
 
     moveCamera() {
-        if (this.keys['ArrowUp'] || this.keys['KeyW']) {
-            this.camera.position.z -= this.speed;
-        }
-        if (this.keys['ArrowDown'] || this.keys['KeyS']) {
-            this.camera.position.z += this.speed;
-        }
-        if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
-            this.camera.position.x -= this.speed;
-        }
-        if (this.keys['ArrowRight'] || this.keys['KeyD']) {
-            this.camera.position.x += this.speed;
-        }
+        // if (this.keys['ArrowUp'] || this.keys['KeyW']) {
+        //     this.camera.position.z -= this.speed;
+        // }
+        // if (this.keys['ArrowDown'] || this.keys['KeyS']) {
+        //     this.camera.position.z += this.speed;
+        // }
+        // if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
+        //     this.camera.position.x -= this.speed;
+        // }
+        // if (this.keys['ArrowRight'] || this.keys['KeyD']) {
+        //     this.camera.position.x += this.speed;
+        // }
 
         // Update camera based on mouse movement
         this.controls.update();
