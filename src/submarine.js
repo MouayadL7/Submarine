@@ -59,6 +59,7 @@ export class Submarine{
         this.phi_x                                      = phi_x;
         this.phi_y                                      = phi_y;
         this.phi_z                                      = phi_z;
+        this.total_force                                = new THREE.Vector3(0, 0, 0)
     }
 
     
@@ -94,31 +95,47 @@ export class Submarine{
         });
     }
 
-    calcLinearAcceleration = (info) => {
-        const W = this.environment.calcWeightForce(this).length()
-        const F_buoyancy = this.environment.calcArchimedesForce(this).length()
+    calcLinearAcceleration = (info , submarine) => {
+        const W = this.environment.calcWeightForce(this)
+        const F_buoyancy = this.environment.calcArchimedesForce(this)
         const F_engine = this.environment.calcEngineForce(this)
         const F_resistance_on_body = this.environment.calcResistanceOnBody(this)
         
-        const F_resistance_back_h  = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfBackPlane , this.angleHorizontalBackPlane)
-        const F_resistance_front_h = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfFrontPlane , this.angleHorizontalFrontPlane)
-        const F_resistance_v = this.environment.calcResistanceForceOnVerticalPlanes(this , this.areaOfBackPlane , this.angleVerticalPlane)
+        const F_resistance_back_h  = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfBackPlane , this.angleHorizontalBackPlane, this.velocity)
+        const F_resistance_front_h = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfFrontPlane , this.angleHorizontalFrontPlane, this.velocity)
+        const F_resistance_v = this.environment.calcResistanceForceOnVerticalPlanes(this , this.areaOfBackPlane , this.angleVerticalPlane, this.velocity)
         
         const F_resistance = new THREE.Vector3().add(F_resistance_v).add(F_resistance_front_h).add(F_resistance_back_h)
         
         info['Engine_Force'].textContent = 'Engine_Force : '   +  F_engine.x.toFixed(0)
         info['Speed_Of_Fans'].textContent = 'Speed_Of_Fans : ' +  this.speedOfFan.toFixed(0)
         
+        
         const m = (this.netMass + this.volumeOfWaterInTanks)
 
-        const ax = (F_engine.x - F_resistance_on_body.x - F_resistance.x) / m
-        const ay = (F_buoyancy - W - F_resistance_on_body.y - F_resistance.y) / m
-        const az = (-F_resistance_on_body.z - F_resistance.z) / m
+        // const ax = (F_engine.x - F_resistance_on_body.x - F_resistance.x) / m
+        // const ay = (F_buoyancy - W - F_resistance_on_body.y - F_resistance.y) / m
+        // const az = (-F_resistance_on_body.z - F_resistance.z) / m
+        const matrix = new THREE.Matrix4()
+        matrix.makeRotationFromQuaternion(submarine.group.quaternion)
 
+        
+        let localEngineForce = F_engine.clone().applyMatrix4(matrix)
+        let localBuoyancy = F_buoyancy.clone().applyMatrix4(matrix)
+        console.log("Engine Force Rotation:" , {
+            "Before":F_engine,
+            "After":localEngineForce
+        })
+        const Total_force = new THREE.Vector3()
+            .add(localEngineForce)
+            .add(localBuoyancy)
+            .sub(W)
+            .sub(F_resistance)
+            .sub(F_resistance_on_body)
+        // this.total_force.copy(new THREE.Vector3(ax * m, ay * m, az * m))
+        this.total_force.copy(Total_force)
+        this.acceleration.copy(Total_force.divideScalar(m))
 
-        info['Acceleration_x'].textContent = 'Acceleration_on_x : ' +  ax.toFixed(0)
-        info['Acceleration_y'].textContent = 'Acceleration_on_x : ' +  ay.toFixed(0)
-        info['Acceleration_z'].textContent = 'Acceleration_on_x : ' +  az.toFixed(0)
         // const res = this.getRotatedForce(new THREE.Vector3(ax , ay , az) , 1)
         console.log("Acceleration" , {
             "net mass": this.netMass,
@@ -131,11 +148,14 @@ export class Submarine{
             "F_resistance":F_resistance,
             'Weight Force': W , 
             'F_buoyancy': F_buoyancy,
-            'acceleration': new THREE.Vector3(ax , ay , az),
+            // 'acceleration': new THREE.Vector3(ax , ay , az),
             'XX':(F_buoyancy - W - F_resistance_on_body.y - F_resistance.y)
             // 'rotated_acceleration': res
         })
-        this.acceleration.set(ax , ay , az)
+        // this.acceleration.set(ax , ay , az)
+        info['Acceleration_x'].textContent = 'Acceleration_on_x : ' +  this.acceleration.x.toFixed(0)
+        info['Acceleration_y'].textContent = 'Acceleration_on_x : ' +  this.acceleration.y.toFixed(0)
+        info['Acceleration_z'].textContent = 'Acceleration_on_x : ' +  this.acceleration.z.toFixed(0)
     }
 
     calcNextVelocity = (deltaTime , info) => {
@@ -169,24 +189,39 @@ export class Submarine{
         this.position.set(x , y , z)
     }
 
-    LinearMotionInMoment = (deltaTime , info) => {
-        this.calcLinearAcceleration(info)
+    LinearMotionInMoment = (deltaTime , info , submarine) => {
+        this.calcLinearAcceleration(info , submarine)
         this.calcNextVelocity(deltaTime , info)
         this.calcNextLocation(deltaTime , info)
     }
     /*  */
     
-    calcAngularAccelerate = () => {
+    calcAngularAccelerate = (info) => {
         const InertiaForce            = this.environment.calcMomentOfInertiaOfCylinder(this)
-        const ResistanceForce_back_H  = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfBackPlane , this.angleHorizontalBackPlane).length()
-        const ResistanceForce_front_H = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfFrontPlane , this.angleHorizontalFrontPlane).length()
-        const ResistanceForce_V       = this.environment.calcResistanceForceOnVerticalPlanes(this , this.areaOfBackPlane , this.angleVerticalPlane).length()
+        const ResistanceForce_back_H  = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfBackPlane , this.angleHorizontalBackPlane, this.angularVelocity)
+        const ResistanceForce_front_H = this.environment.calcResistanceForceOnHorizontalPlanes(this , this.areaOfFrontPlane , this.angleHorizontalFrontPlane, this.angularVelocity)
+        const ResistanceForce_V       = this.environment.calcResistanceForceOnVerticalPlanes(this , this.areaOfBackPlane , this.angleVerticalPlane, this.angularVelocity)
 
-        const back_h  = ResistanceForce_back_H  * this.distanceHorizontalBackPlanesFromTheCenter
-        const front_h = ResistanceForce_front_H * this.distanceHorizontalFrontPlanesFromTheCenter
+        // const dis_h_back  = new THREE.Vector3(this.distanceHorizontalBackPlanesFromTheCenter , 0 , 0)
+        // const dis_h_front = new THREE.Vector3(this.distanceHorizontalFrontPlanesFromTheCenter , 0 , 0)
+        // const dis_v = new THREE.Vector3(0 , this.distanceVerticalPlanesFromTheCenter , 0)
+        // const d_body = new THREE.Vector3(this.height / 2, 0, 0)
+
+        // const angle_X_back  = ResistanceForce_back_H.angleTo(dis_h_back)
+        // const angle_X_front = ResistanceForce_front_H.angleTo(dis_h_front)
+        // const angle_Y       = ResistanceForce_V.angleTo(dis_v)
+        // const angle_body    = ResistanceOnBody.angleTo(d_body)
+
+        // info['angle_X_back'].textContent = 'angle_X_back : ' +  angle_X_back.toFixed(0)
+        // info['angle_X_front'].textContent = 'angle_X_front : ' +  angle_X_front.toFixed(0)
+        // info['angle_Y'].textContent = 'angle_Y : ' +  angle_Y.toFixed(0)
+        // info['angle_body'].textContent = 'angle_body : ' +  angle_body.toFixed(0)
         
-        const moment_h = (back_h + front_h)
-        const moment_v = ResistanceForce_V * this.distanceVerticalPlanesFromTheCenter
+
+
+        const moment_h_back  = ResistanceForce_back_H.length() * this.distanceHorizontalBackPlanesFromTheCenter * Math.cos(this.angleHorizontalBackPlane)
+        const moment_h_front = ResistanceForce_front_H.length() * this.distanceHorizontalFrontPlanesFromTheCenter * Math.cos(this.angleHorizontalFrontPlane)
+        const moment_v       = ResistanceForce_V.length() * this.distanceVerticalPlanesFromTheCenter * Math.cos(this.angleVerticalPlane)
 
 
         console.log("Angular Acceleration" , {
@@ -194,23 +229,20 @@ export class Submarine{
             "ResistanceForce_front_H" : ResistanceForce_front_H,
             "ResistanceForce_V" : ResistanceForce_V,
             "Moment_y" : moment_v,
-            "Moment_z" : moment_h, 
+            "Moment_z" : moment_h_back,
+            "Moment_x" : moment_h_front 
         })
 
-        const res = new THREE.Vector3(0 , moment_h / InertiaForce[1][1] , moment_v / InertiaForce[2][2])
-        // res = this.getRotatedForce(res , -1)
+        // const res = new THREE.Vector3(moment_body / InertiaForce[0][0], (moment_v + moment_body) / InertiaForce[1][1] , (moment_h_back + moment_h_front + moment_body) / InertiaForce[2][2])
+        const res = new THREE.Vector3(0, moment_v / InertiaForce[1][1] , (moment_h_back + moment_h_front) / InertiaForce[2][2])
 
         this.angularAcceleration.set(res.x , res.y , res.z)
-        // return Moment_z / InertiaForce[2][2]
     }  
 
     calcAngularVelocity = (deltaTime , info) => {
         const wx = this.angularVelocity.x + this.angularAcceleration.x * deltaTime
         const wy = this.angularVelocity.y + this.angularAcceleration.y * deltaTime
-        let wz = this.angularVelocity.z + this.angularAcceleration.z * deltaTime
-
-        // if (wz > 1)
-        //     wz = 1;
+        const wz = this.angularVelocity.z + this.angularAcceleration.z * deltaTime
 
         info['Angular_X'].textContent = 'Angular_X: ' +  wx.toFixed(0)
         info['Angular_Y'].textContent = 'Angular_Y: ' +  wy.toFixed(0)
@@ -222,32 +254,38 @@ export class Submarine{
         return this.angularVelocity
     }
 
-    calcNextAngel = (deltaTime , info , submarine ) => {
-        const x = this.rotation.x + this.angularVelocity.x * deltaTime; 
+    calcNextAngel = (deltaTime , info , submarine , camera) => {
+        let x = this.rotation.x + this.angularVelocity.x * deltaTime; 
         let y = this.rotation.y + this.angularVelocity.y * deltaTime; 
         let z = this.rotation.z + this.angularVelocity.z * deltaTime; 
 
+        // stop rotation on Z
         const Z = 0.34
-        if (z < 0.34 && z > -0.34)
+        if (z < 0.34 && z > -0.34){
             submarine.group.rotateX(deltaTime * this.angularVelocity.z)
+            // camera.rotateX(deltaTime * this.angularVelocity.z)
+        }
         z = Math.min(z, Z)
         z = Math.max(z, -Z)
 
-
         this.rotation.set(x , y , z)
+        let matrix = new THREE.Matrix4()
 
-        // submarine.group.rotateX(deltaTime * this.angularVelocity.z)
+        matrix.makeRotationZ(this.rotation.z)
+        this.total_force.applyMatrix4(matrix)
+        
+
         submarine.group.rotateY(deltaTime * this.angularVelocity.y)
-            
+        // camera.rotateY(deltaTime * this.angularVelocity.y)
         info['Rotation_x'].textContent = 'Rotation_x : ' + x.toFixed(0)
         info['Rotation_y'].textContent = 'Rotation_y : ' + y.toFixed(0)
         info['Rotation_z'].textContent = 'Rotation_z : ' + z.toFixed(0)
     }
 
-    AngularMotionInMoment = (deltaTime , info , submarine) => {
-        this.calcAngularAccelerate(info )
+    AngularMotionInMoment = (deltaTime , info , submarine , camera) => {
+        this.calcAngularAccelerate(info)
         this.calcAngularVelocity(deltaTime , info)
-        this.calcNextAngel(deltaTime , info , submarine)
+        this.calcNextAngel(deltaTime , info , submarine , camera)
     }
 
     getRotatedForce = (force , sign = 1) => {

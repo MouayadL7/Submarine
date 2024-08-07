@@ -20,7 +20,7 @@ export class Environment{
     }
 
     calcEngineForce = (submarine) => {
-        const F = new THREE.Vector3(submarine.enginePower * submarine.speedOfFan, 0, 0) 
+        const F = new THREE.Vector3(0, 0, -submarine.enginePower * submarine.speedOfFan) 
         // const res = submarine.getRotatedForce(F)
 
         console.log("Engine force" , {
@@ -34,6 +34,7 @@ export class Environment{
         // Remember, this force must be applied in the center of mess of the submarine
         // which is in our program the center of the submarine:
         let F = new THREE.Vector3(0, (submarine.netMass + submarine.volumeOfWaterInTanks) * Environment.GRAVITY, 0)
+        // let F = new THREE.Vector3(0, Environment.DENSITY_OF_LIQUID * Environment.GRAVITY * this.calcCylinderVolume(submarine), 0)
 
         // const res = submarine.getRotatedForce(new THREE.Vector3(0 , F , 0))
         
@@ -76,11 +77,11 @@ export class Environment{
         return res 
     }
 
-    calcResistanceForceOnHorizontalPlanes = (submarine, area, angle) => {
+    calcResistanceForceOnHorizontalPlanes = (submarine, area, angle, velocity) => {
         const speed = submarine.velocity.length()
 
-        const F_x = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * submarine.velocity.x * speed * Environment.DENSITY_OF_LIQUID
-        const F_y = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * submarine.velocity.y * speed * Environment.DENSITY_OF_LIQUID
+        const F_x = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * velocity.x * velocity.x * Environment.DENSITY_OF_LIQUID
+        const F_y = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * velocity.y * velocity.y * Environment.DENSITY_OF_LIQUID
 
         const resistance_x = F_x * Math.sin(angle) * Math.sin(angle) + F_y * Math.cos(angle) * Math.sin(angle)
         const resistance_y = F_x * Math.sin(angle) * Math.cos(angle) + F_y * Math.cos(angle) * Math.cos(angle)
@@ -97,11 +98,11 @@ export class Environment{
         return resistance
     }
 
-    calcResistanceForceOnVerticalPlanes = (submarine ,area , angle) => {
+    calcResistanceForceOnVerticalPlanes = (submarine ,area , angle, velocity) => {
         const speed = submarine.velocity.length()
 
-        const F_x = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * submarine.velocity.x * speed * Environment.DENSITY_OF_LIQUID
-        const F_z = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * submarine.velocity.z * speed * Environment.DENSITY_OF_LIQUID
+        const F_x = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * velocity.x * velocity.x * Environment.DENSITY_OF_LIQUID
+        const F_z = (Environment.PRESSURE + Environment.FRICTION) * 0.5 * area * velocity.z * velocity.z * Environment.DENSITY_OF_LIQUID
 
         const resistance_x = F_x * Math.sin(angle) * Math.sin(angle) + F_z * Math.cos(angle) * Math.sin(angle)
         const resistance_z = F_x * Math.sin(angle) * Math.cos(angle) + F_z * Math.cos(angle) * Math.cos(angle)
@@ -118,7 +119,7 @@ export class Environment{
         return resistance
     } 
 
-    calcMomentOfInertiaOfCylinder = (submarine) => {
+    calcMomentOfInertiaOfCylinder =  (submarine) => {
         // Check if the mass should be with the mass of water in the tanks or not
         const m = submarine.netMass + submarine.volumeOfWaterInTanks
         const h = submarine.height
