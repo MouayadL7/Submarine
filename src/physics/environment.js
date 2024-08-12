@@ -31,13 +31,7 @@ export class Environment{
     }
     
     calcArchimedesForce = (submarine) => {
-        // Remember, this force must be applied in the center of mess of the submarine
-        // which is in our program the center of the submarine:
         let F = new THREE.Vector3(0, Environment.DENSITY_OF_LIQUID * Environment.GRAVITY * this.calcCylinderVolume(submarine), 0)
-        // let F = new THREE.Vector3(0, Environment.DENSITY_OF_LIQUID * Environment.GRAVITY * this.calcCylinderVolume(submarine), 0)
-
-        // const res = submarine.getRotatedForce(new THREE.Vector3(0 , F , 0))
-        
         console.log('Archimedes Function:' , {
             "radius": submarine.radius,
             'Density of Water': Environment.DENSITY_OF_LIQUID,
@@ -142,13 +136,18 @@ export class Environment{
         const buoyantForce = total_mass * Environment.GRAVITY
         let Vdisplaced  = buoyantForce / (Environment.DENSITY_OF_LIQUID * Environment.GRAVITY)
         Vdisplaced = Math.min(Vdisplaced, F)
-       /*  console.log("Cylinder Volume :" , {
+       /*console.log("Cylinder Volume :" , {
             "PI" : Math.PI,
             "Radius": submarine.radius,
             "height": submarine.height,
             'F':F
         }) */
         return Vdisplaced
+            // const submergedVolume = Math.PI * submarine.radius ** 2 * submarine.height;  // Theoretical maximum displacement volume
+            // const displacedVolume = Math.min(submergedVolume, (submarine.netMass + submarine.volumeOfWaterInTanks) / Environment.DENSITY_OF_LIQUID);
+            
+            // return displacedVolume;
+
     }
 
 }
