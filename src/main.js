@@ -33,70 +33,71 @@ Submarine_Physics.position.set(0 , 0 , 0)
 Submarine_Physics.getSubmarineInfo()
 // return ;
 envDebugFolder
-        .add(Environment , 'DENSITY_OF_LIQUID' , 1000 , 1050)
-        .name('DensityOfWater')
-        .onChange( (newValue) => {
-            Environment.DENSITY_OF_LIQUID = newValue
+.add(Environment , 'DENSITY_OF_LIQUID' , 1000 , 1050)
+.name('DensityOfWater')
+.onChange( (newValue) => {
+    Environment.DENSITY_OF_LIQUID = newValue
         })
 envDebugFolder
-        .add(Environment , 'FRICTION' , 0 , 10 , 0.01)
-        .name('Friction')
-        .onChange( (newValue) =>{
-            Environment.FRICTION = newValue
-        })
+.add(Environment , 'FRICTION' , 0 , 10 , 0.01)
+.name('Friction')
+.onChange( (newValue) =>{
+    Environment.FRICTION = newValue
+})
 envDebugFolder
-        .add(Environment , 'PRESSURE' , 0 , 10 , 0.01)
-        .name('Pressure')
-        .onChange( (newValue) =>{
-            Environment.PRESSURE = newValue
-        })
+.add(Environment , 'PRESSURE' , 0 , 10 , 0.01)
+.name('Pressure')
+.onChange( (newValue) =>{
+    Environment.PRESSURE = newValue
+})
 envDebugFolder
-        .add(Environment , 'GRAVITY' , 0 , 20 , 0.01)
-        .name('Gravity')
-        .onChange( (newValue) =>{
-            Environment.GRAVITY = newValue
-        })
+.add(Environment , 'GRAVITY' , 0 , 20 , 0.01)
+.name('Gravity')
+.onChange( (newValue) =>{
+    Environment.GRAVITY = newValue
+})
 
 submarineDebugFolder.add(Submarine_Physics , 'height' , 0.5 , 10 , 0.1)
 submarineDebugFolder.add(Submarine_Physics , 'radius' , 0.2 , 10 , 0.01)
 submarineDebugFolder.add(Submarine_Physics , 'tanksCapacity' , 10000 , 1000000 , 1)
-        .name('Tanks Capacity')
+.name('Tanks Capacity')
 submarineDebugFolder.add(Submarine_Physics , 'netMass' , 500 , 10000 , 1)
-        .name('Net Mass')
+.name('Net Mass')
 submarineDebugFolder.add(Submarine_Physics , 'enginePower' , 100 , 10000)
-        .name('Engine Power')
+.name('Engine Power')
 submarineDebugFolder.add(Submarine_Physics , 'areaOfBackPlane' , 0 , 10)
-        .name('Area Of Back Plane')
+.name('Area Of Back Plane')
 submarineDebugFolder.add(Submarine_Physics , 'areaOfFrontPlane' , 0 , 10)
     .name('Area Of Front Plane')
-submarineDebugFolder.add(Submarine_Physics , 'distanceHorizontalFrontPlanesFromTheCenter' , 0 , 10)
+    submarineDebugFolder.add(Submarine_Physics , 'distanceHorizontalFrontPlanesFromTheCenter' , 0 , 10)
     .name('The Distance Of The Horizontal Front Planes From The Center')
-
-submarineDebugFolder.add(Submarine_Physics , 'distanceHorizontalBackPlanesFromTheCenter' , 0 , 10)
+    
+    submarineDebugFolder.add(Submarine_Physics , 'distanceHorizontalBackPlanesFromTheCenter' , 0 , 10)
     .name('The Distance Of The Horizontal Back Planes From The Center')     
-
-submarineDebugFolder.add(Submarine_Physics , 'distanceVerticalPlanesFromTheCenter' , 0 , 10)
+    
+    submarineDebugFolder.add(Submarine_Physics , 'distanceVerticalPlanesFromTheCenter' , 0 , 10)
     .name('The Distance Of The Vertical Planes From The Center')     
-
-/* Objects based on submarine */
-// console.log(physics.getSubmarineInfo())
-
-
-// Space box
-THREE.BoxGeometry
-const environmentMap = cubeTextureLoader.load([
-    "assets/textures/scene.jpg",
-    "assets/textures/scene.jpg",
-    "assets/textures/scene.jpg",
-    "assets/textures/scene.jpg",
-    "assets/textures/scene.jpg",
-    "assets/textures/scene.jpg"
-]);
-scene.background = environmentMap;
-
-// Camera:
-const camera = new THREE.PerspectiveCamera(
-    45,
+    
+    /* Objects based on submarine */
+    // console.log(physics.getSubmarineInfo())
+    
+    
+    // Space box
+    THREE.BoxGeometry
+    const environmentMap = cubeTextureLoader.load([
+        "assets/textures/scene.jpg",
+        "assets/textures/scene.jpg",
+        "assets/textures/scene.jpg",
+        "assets/textures/scene.jpg",
+        "assets/textures/scene.jpg",
+        "assets/textures/scene.jpg"
+    ]);
+    scene.background = environmentMap;
+    
+    // Camera:
+    const camera = new THREE.PerspectiveCamera(
+        45,
+        
     canvas.width / canvas.height,
     0.1,
     1000000000
@@ -310,7 +311,6 @@ window.addEventListener('keydown' , (event) =>{
         // Submarine_Physics.LinearMotionInMoment(deltaTime , info , submarine)
         // Submarine_Physics.AngularMotionInMoment(deltaTime , info , submarine)
         // submarine.group.position.copy(Submarine_Physics.position)
-        // submarine.group.rotation.copy(Submarine_Physics.rotation)
 
         console.log("Camera:" , camera)
         console.log("Submarine_Model" , submarine)        
@@ -389,10 +389,11 @@ gui.add(Submarine_Physics , 'phi_z' , -10 , 10 , 0.1)
     submarine.group.position.copy(Submarine_Physics.position)
     // submarine.group.rotation.copy(Submarine_Physics.rotation)
     Submarine_Physics.getSubmarineInfo()
-
-    }
+    
+}
 )
 let cameraOffset = new THREE.Vector3(-150 , 40 , 0)
+let isRunning = true 
 export const main = () => {
     var vertices = plain.geometry.attributes.position.array;
     for (var i = 0; i < vertices.length; i += 3) {
@@ -406,30 +407,23 @@ export const main = () => {
     const current_time = Date.now()
     const deltaTime = (current_time - previous_time)/1000 
     previous_time = current_time 
-    
+    if(isRunning) return 
     Submarine_Physics.LinearMotionInMoment(deltaTime , info , submarine)
     Submarine_Physics.AngularMotionInMoment(deltaTime , info , submarine , camera)
     
     Submarine_Physics.getSubmarineInfo()
     submarine.group.position.copy(Submarine_Physics.position)
-    // submarine.group.rotation.copy(Submarine_Physics.rotation)
     
     const axesHelper = new THREE.AxesHelper(100)
     scene.add(axesHelper)
     // controls.update()
 
-    // const camera_offset = new THREE.Vector3(Submarine_Physics.position.x - 150, Submarine_Physics.position.y + 40, Submarine_Physics.position.z)
-    // const camera_offset = new THREE.Vector3(Submarine_Physics.position.x - 150, Submarine_Physics.position.y + 40, Submarine_Physics.position.z)
-    // const camera_position = new THREE.Vector3().copy(camera_offset).applyMatrix4(submarine.group.matrixWorld)
-    // camera.position.copy(camera_position)
-    // camera.lookAt(camera.position)
 
     camera.lookAt(Submarine_Physics.position)
     camera.position.set(Submarine_Physics.position.x - 150, Submarine_Physics.position.y + 40, Submarine_Physics.position.z)
 
     const matrix = new THREE.Matrix4()
     matrix.makeRotationFromQuaternion(submarine.group.quaternion)
-    // camera.position.applyMatrix4(matrix)
     let offset = cameraOffset.clone().applyMatrix4(matrix)
     offset.applyAxisAngle(new THREE.Vector3(0 , 1 , 0) , Math.PI/ 2)
     camera.position.copy(Submarine_Physics.position.clone().add(offset))
@@ -442,5 +436,20 @@ export const main = () => {
     stats.update()
 
 };
+const gameControl = {
+    toggleGame: function() {
+        isRunning = !isRunning
+        if (isRunning) {
+            main()
+            this.guiButton.name('Stop Game');
+        } else {
+            this.guiButton.name('Start Game')
+        }
+    }
+};
+
+gui.add(gameControl , "toggleGame")
+    .name("pause")
+    
 main();
 

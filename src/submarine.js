@@ -178,10 +178,10 @@ export class Submarine{
     }
 
     calcNextLocation = (deltaTime , info) => {
-        const x = this.position.x + this.velocity.x * deltaTime
-        const y = this.position.y + this.velocity.y * deltaTime
-        const z = this.position.z + this.velocity.z * deltaTime
-
+        let x = this.position.x + this.velocity.x * deltaTime
+        let y = this.position.y + this.velocity.y * deltaTime
+        let z = this.position.z + this.velocity.z * deltaTime
+        y = Math.min(0 , y)
         info['Position_x'].textContent = 'Position_x : ' + x.toFixed(0)
         info['Position_y'].textContent = 'Position_y : ' + y.toFixed(0)
         info['Position_z'].textContent = 'Position_z : ' + z.toFixed(0)
