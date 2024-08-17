@@ -7,6 +7,7 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GUI } from 'dat.gui';
 import { SubmarineModel } from './model/submarine_model.js';
+import { IslandModel } from './model/island_model.js'
 import { SkyBoxModel } from "./model/sky_box_model.js";
 import { PlainModel } from './model/plain_model.js'; 
 import { KeysController } from "./controller/keys_controller.js";
@@ -159,6 +160,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
 controls.maxPolarAngle = Math.PI;
+const textureLoader = new THREE.TextureLoader();
 
 /* Lighting */
 const ambientLight = new THREE.AmbientLight(0xffcc88, 0.7); // Sunset color
@@ -172,8 +174,38 @@ const cube = new THREE.Mesh(skyBox.getCubeGeometry(), skyBox.getSkyBox());
 cube.position.y = -1010;
 scene.add(cube);
 
+// Step 1: Create the cube geometry
+const size = 20000; // Size of the ocean cube
+const geometry = new THREE.BoxGeometry(size, size, size);
+
+// Step 2: Load the textures
+const textureFront = textureLoader.load ('assets/textures/front.jpg');
+const textureBack = textureLoader.load  ('assets/textures/back.jpg');
+const textureLeft = textureLoader.load  ('assets/textures/left.jpg');
+const textureRight = textureLoader.load ('assets/textures/right.jpg');
+const textureTop = textureLoader.load('assets/textures/surface_resized.jpg');
+const textureBottom = textureLoader.load('assets/textures/down.jpg');
+
+// Step 3: Create materials with inverted normals
+const materials = [
+    new THREE.MeshBasicMaterial({ map: textureRight, side: THREE.BackSide }),  // Right side
+    new THREE.MeshBasicMaterial({ map: textureLeft, side: THREE.BackSide }),   // Left side
+    new THREE.MeshBasicMaterial({ map: textureTop, side: THREE.BackSide }),    // Top side
+    new THREE.MeshBasicMaterial({ map: textureBottom, side: THREE.BackSide }), // Bottom side
+    new THREE.MeshBasicMaterial({ map: textureFront, side: THREE.BackSide }),  // Front side
+    new THREE.MeshBasicMaterial({ map: textureBack, side: THREE.BackSide })    // Back side
+];
+
+// Step 4: Create the cube with these materials
+const oceanCube = new THREE.Mesh(geometry, materials);
+oceanCube.position.y = -size/2
+
+// Step 5: Add the cube to the scene
+scene.add(oceanCube);
+
+
+
 /* PLAIN-WAVES */
-const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load("/assets/textures/blue_ocean.jpg");
 const plain = new PlainModel({color: 0x04d7e1,side: THREE.DoubleSide,transparent: true,opacity: 0.7,texture: texture,
     width: 20000,height: 20000,widthSegments: 500,heightSegments: 500,rotationX: Math.PI / 2,position: { x: 0, y: 0, z: 0 }
@@ -183,12 +215,143 @@ scene.add(plain.getPlain());
 /* SUBMARINE */
 const plainPosition = { x:plain.pl.position.x, y: plain.pl.position.y, z:plain.pl.position.z};
 const submarine = new SubmarineModel('models/scene.gltf',plainPosition);
+
 submarine.group.rotateY(Math.PI)
 scene.add(submarine.getSubmarine());
 
+const submarineBox = new THREE.Box3().setFromObject(submarine.group);
+
+
+/* ISLAND */
+plainPosition.y += 40 ;
+plainPosition.x = -2000 ;
+plainPosition.z = 500 ;
+const islands = [] 
+
+for(let i = 0 ; i < 10 ; i++){
+    plainPosition.x += 1000 ;
+    const island = new IslandModel('models/low_poly_medieval_island/scene.gltf' , plainPosition);
+    island.group.scale.set(100 , 100 , 100);
+    scene.add(island.getIsland())
+    islands.push(island)
+
+}
+
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const sound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+const audioPath = '/src/sounds/boom.mp3';
+console.log("Loading audio from path:", audioPath);
+
+audioLoader.load(audioPath, function(buffer) {
+  sound.setBuffer(buffer);
+  sound.setLoop(false);
+  sound.setVolume(0.5);
+  console.log("Audio loaded successfully");
+}, undefined, function(error) {
+  console.error("An error occurred while loading the audio:", error);
+});
+
+// Play the sound
+function playBoomSound() {
+  sound.play();
+}
+
+/* CHECKING COLLISION BETWEEN THE SUBMARINE AND THE ISLANDS */
+
+function checkCollision() {
+    submarineBox.setFromObject(submarine.group);
+    islands.forEach(island=> {
+        const islandBox = new THREE.Box3().setFromObject(island.group);
+        
+        /* console.log("Submarine_Box" , submarineBox);
+        console.log("IslandBox" , islandBox) */
+        if (submarineBox.intersectsBox(islandBox)) {
+            // Collision detected, trigger explosion
+            triggerExplosion();
+        }
+    });
+    
+}
+// Create a particle system for the explosion
+function createExplosion(position) {
+    const particles = new THREE.BufferGeometry();
+    const particleCount = 100;
+    const positions = new Float32Array(particleCount * 3);
+  
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] = position.x + (Math.random() - 0.5) * 10;
+      positions[i * 3 + 1] = position.y + (Math.random() - 0.5) * 10;
+      positions[i * 3 + 2] = position.z + (Math.random() - 0.5) * 10;
+    }
+  
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0xff0000,
+      size: 2,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+  
+    const particleSystem = new THREE.Points(particles, particleMaterial);
+    scene.add(particleSystem);
+  
+    // Animate the particles
+    const explosionDuration = 1; // seconds
+    const startTime = performance.now();
+  
+    function animateExplosion() {
+      const elapsedTime = (performance.now() - startTime) / 1000;
+      if (elapsedTime < explosionDuration) {
+        const positions = particles.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+          positions[i * 3] *= 1.05; // Expand particles outward
+          positions[i * 3 + 1] *= 1.05;
+          positions[i * 3 + 2] *= 1.05;
+        }
+        particles.attributes.position.needsUpdate = true;
+        requestAnimationFrame(animateExplosion);
+      } else {
+        scene.remove(particleSystem); // Remove particle system after explosion
+      }
+    }
+  
+    animateExplosion();
+  }
+
+function stopSubmarine() {
+    Submarine_Physics.velocity.set(0, 0, 0); // Stop the submarine
+    Submarine_Physics.acceleration.set(0, 0, 0);
+    Submarine_Physics.angularVelocity.set(0, 0, 0);
+    Submarine_Physics.angularAcceleration.set(0, 0, 0);
+    
+}
+let stopChecking = false ;
+  // Example usage: Trigger explosion at submarine's position
+function triggerExplosion() {
+    const submarinePosition = submarine.group.position.clone();
+    stopSubmarine();
+    scene.remove(submarine)
+    createExplosion(submarinePosition);
+    console.log("Boom! Submarine hit the island!");
+    if(!stopChecking){
+        alert("The submarine has exploded! Reload the page to start your journey again!!.");
+        playBoomSound()
+        stopChecking = true 
+    }
+    
+    // stopChecking = true ;
+    /* setTimeout(() => {
+        alert("The submarine has exploded! The page will reload.");
+        window.location.reload();
+      }, 2000); // Adjust the delay as needed */
+}
 /* FOG */
 const fogColor = new THREE.Color(0x001123); // Deep water color
-scene.fog = new THREE.Fog(fogColor, 50, 2000);
+scene.fog = new THREE.Fog(fogColor, 50, 20000);
 
 // Window resizing
 const handleWindowResize = () => {
@@ -305,7 +468,7 @@ export const main = () => {
     }
     plain.geometry.attributes.position.needsUpdate = true;
     time += 0.4;
-
+    if(!stopChecking){
     const current_time = Date.now()
     const deltaTime = (current_time - previous_time)/1000 
     previous_time = current_time 
@@ -315,13 +478,17 @@ export const main = () => {
     
     Submarine_Physics.getSubmarineInfo()
     submarine.group.position.copy(Submarine_Physics.position)
+    checkCollision();
+    }else{
+        triggerExplosion();
+    }
     
     // const axesHelper = new THREE.AxesHelper(100)
     // scene.add(axesHelper)
     // controls.update()
 
 
-    camera.lookAt(Submarine_Physics.position)
+   camera.lookAt(Submarine_Physics.position)
     camera.position.set(Submarine_Physics.position.x - 150, Submarine_Physics.position.y + 40, Submarine_Physics.position.z)
 
     const matrix = new THREE.Matrix4()
