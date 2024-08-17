@@ -205,7 +205,7 @@ const handleWindowResize = () => {
     
 
 const init = () => {
-    // camera.position.set(-201.62052466212333 , 59.996158817663 , -0.21305663026041985);
+    camera.position.set(-201.62052466212333 , 59.996158817663 , -0.21305663026041985);
     // camera.lookAt(submarine.group.position)
 
     // controls.update();
@@ -316,8 +316,8 @@ export const main = () => {
     Submarine_Physics.getSubmarineInfo()
     submarine.group.position.copy(Submarine_Physics.position)
     
-    const axesHelper = new THREE.AxesHelper(100)
-    scene.add(axesHelper)
+    // const axesHelper = new THREE.AxesHelper(100)
+    // scene.add(axesHelper)
     // controls.update()
 
 

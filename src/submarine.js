@@ -42,6 +42,8 @@ export class Submarine{
         this.radius                                     = radius;
         this.netMass                                    = netMass;
         this.tanksCapacity                              = tanksCapacity;
+        this.frontTanksCapacity                         = 0
+        this.backTanksCapacity                          = 0
         this.volumeOfWaterInTanks                       = volumeOfWaterInTanks;
         this.enginePower                                = enginePower;
         this.maxSpeedOfFan                              = maxSpeedOfFan;
