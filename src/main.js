@@ -139,7 +139,8 @@ const info = {
     'Acceleration_z':0,
 
     'buoyancy':0,
-    'weight':0
+    'weight':0,
+    'angleHorizontalFrontPlane':0
 }
 
 Object.keys(info).forEach(function (element) {
@@ -397,16 +398,26 @@ window.addEventListener('keydown' , (event) =>{
     const max_rotation = Math.PI / 24 
 
     if(key == 'ArrowUp')
+
     {
+        if(Submarine_Physics.angleHorizontalBackPlane <=0.34){
         Submarine_Physics.angleHorizontalBackPlane  += 0.1
         Submarine_Physics.angleHorizontalFrontPlane += 0.1
         Submarine_Physics.angularVelocity.z += 0.01
+        }
+        
+        info["angleHorizontalFrontPlane"].textContent = 'angleHorizontalFrontPlane : ' + (Submarine_Physics.angleHorizontalFrontPlane * 100).toFixed(0)
+
     }
     if(key == 'ArrowDown')
     {
-        Submarine_Physics.angleHorizontalBackPlane  -= 0.1
-        Submarine_Physics.angleHorizontalFrontPlane -= 0.1
-        Submarine_Physics.angularVelocity.z -= 0.01
+        if(Submarine_Physics.angleHorizontalBackPlane >=-0.34){
+            Submarine_Physics.angleHorizontalBackPlane  -= 0.1
+            Submarine_Physics.angleHorizontalFrontPlane -= 0.1
+            Submarine_Physics.angularVelocity.z -= 0.01
+        }
+        info["angleHorizontalFrontPlane"].textContent = 'angleHorizontalFrontPlane : ' + (Submarine_Physics.angleHorizontalFrontPlane * 100).toFixed(0)
+
     }
     if(key == 'ArrowRight')
     {

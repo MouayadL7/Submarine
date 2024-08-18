@@ -112,7 +112,7 @@ export class Submarine{
         info['Engine_Force'].textContent = 'Engine_Force : '   +  -F_engine.z.toFixed(0)
         info['Speed_Of_Fans'].textContent = 'Speed_Of_Fans : ' +  this.speedOfFan.toFixed(0)
         info['buoyancy'].textContent = 'Buoyancy : ' +  F_buoyancy.y.toFixed(0)
-        info['weight'].textContent = 'W : ' +  W.y.toFixed(0)
+        info['weight'].textContent = 'Salah : ' +  W.y.toFixed(0)
         const m = (this.netMass + this.volumeOfWaterInTanks)
 
         const matrix = new THREE.Matrix4()
